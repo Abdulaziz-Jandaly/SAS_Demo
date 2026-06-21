@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoH Oman — Medical Supply Forecast</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&display=swap');
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --ink:#1C1C1A; --ink2:#2E2E2A;
+  --muted:#76766E; --faint:#A6A69E; --line:#ECEBE6; --line2:#E4E3DD; --track:#F1F0EB;
+  --accent:#1F8A70; --accent2:#147460; --accent-soft:#ECF4F1;
+  --good:#2F9E84; --warn:#C39A45; --bad:#C25A48;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+  --sbw:236px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-weight:400;
+  font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--accent-soft)}
+
+.app{display:grid;grid-template-columns:var(--sbw) 1fr;height:100vh;overflow:hidden}
+.side{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--paper);
+  display:flex;flex-direction:column;padding:26px 18px}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 6px 26px}
+.mark{width:34px;height:34px;flex:none}
+.brand h1{font-family:var(--sans);font-weight:600;font-size:15px;letter-spacing:.1px;line-height:1.2;color:var(--ink)}
+.brand h1 span{display:block;font-weight:500;font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--accent);margin-top:3px}
+.nav{display:flex;flex-direction:column;gap:1px;margin-top:4px}
+.nav .lbl{font-size:9.5px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--faint);padding:14px 12px 8px}
+.nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:8px;color:var(--muted);font-size:13.5px;font-weight:400;
+  transition:background .15s,color .15s;position:relative}
+.nav button .ic{width:16px;height:16px;flex:none;opacity:.7;stroke-width:1.6}
+.nav button:hover{background:#F4F3EE;color:var(--ink)}
+.nav button.on{background:var(--accent-soft);color:var(--accent2);font-weight:500}
+.nav button.on .ic{opacity:1;color:var(--accent)}
+.nav button.on::before{content:"";position:absolute;left:-18px;top:9px;bottom:9px;width:2px;border-radius:2px;background:var(--accent)}
+.side-foot{margin-top:auto;padding:16px 12px 2px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--faint);line-height:1.75}
+.side-foot b{color:var(--muted);font-weight:500}
+
+.main{min-width:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 40px 7px;flex:none}
+.crumb{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);font-weight:500}
+.crumb b{color:var(--ink);font-weight:600}
+.pill{font-size:11.5px;color:var(--muted);display:flex;gap:8px;align-items:center;font-weight:400}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.stage{flex:1;display:flex;justify-content:center;align-items:flex-start;overflow:hidden;padding:8px 40px 14px}
+.page{display:none;width:1160px;flex:none;transform-origin:top center}
+.page.on{display:block;animation:fade .4s ease both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+.phead{margin:0 0 14px}
+.phead .kicker{font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:6px}
+.phead h2{font-family:var(--serif);font-weight:400;font-size:26px;letter-spacing:-.2px;color:var(--ink)}
+.phead p{color:var(--muted);font-size:13px;max-width:720px;margin-top:5px;line-height:1.5}
+
+.grid{display:grid;gap:14px}
+.c-4{grid-template-columns:repeat(4,1fr)}
+.c-3{grid-template-columns:repeat(3,1fr)}
+.c-2{grid-template-columns:repeat(2,1fr)}
+.c-23{grid-template-columns:1.65fr 1fr}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+  position:relative;animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card h3{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);font-weight:600;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card h3 .tag{color:var(--faint);font-weight:500;letter-spacing:.8px;text-transform:none;font-size:11px}
+.card .sub{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.5}
+
+.kpi{padding:15px 18px}
+.k-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.k-val{font-family:var(--serif);font-weight:300;font-size:34px;line-height:1;margin-top:9px;color:var(--ink);letter-spacing:-.5px}
+.k-val small{font-size:16px;color:var(--faint);font-family:var(--sans);font-weight:400;margin-left:4px;letter-spacing:0}
+.k-meta{margin-top:8px;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.chiparrow{font-size:11.5px;font-weight:600}
+.up{color:var(--good)} .dn{color:var(--bad)} .neu{color:var(--accent)}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:7px;vertical-align:0}
+.tbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+.tbl th{font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--faint);font-weight:600;
+  text-align:left;padding:9px 10px;border-bottom:1px solid var(--line2)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--ink2)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#FAF9F5}
+.tbl .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.bdg{font-size:10.5px;padding:2px 8px;border-radius:5px;letter-spacing:.3px;font-weight:500}
+.bdg.arima{color:var(--accent2);background:var(--accent-soft)}
+.bdg.esm{color:#8a6d2f;background:#F5EFE2}
+svg{display:block;width:100%;overflow:visible}
+.cap{font-size:11.5px;color:var(--faint);margin-top:13px;line-height:1.5}
+.seg-ctl{display:flex;gap:6px;flex-wrap:wrap}
+.seg-ctl button{all:unset;cursor:pointer;font-size:11px;letter-spacing:.3px;color:var(--muted);
+  padding:5px 11px;border-radius:7px;border:1px solid var(--line2);transition:.15s;font-weight:500}
+.seg-ctl button:hover{border-color:var(--accent);color:var(--accent2)}
+.seg-ctl button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.statline{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:9px 0}
+.statline:last-child{border-bottom:none}
+.statline span{color:var(--muted);font-size:13px}
+.statline b{font-family:var(--serif);font-weight:400;font-size:17px;font-variant-numeric:tabular-nums}
+@media(max-width:1120px){.c-4{grid-template-columns:repeat(2,1fr)}.c-3,.c-23{grid-template-columns:1fr}}
+@media(max-width:820px){:root{--sbw:0px}.side{display:none}.wrap,.topbar{padding-left:20px;padding-right:20px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 34 34" fill="none"><rect x="1" y="1" width="32" height="32" rx="9" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.3"/><path d="M8 22 L14 15 L19 19 L26 10" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="10" r="2" fill="var(--accent)"/></svg>
+      <h1>Supply Forecast<span>MoH · Oman</span></h1></div>
+    <nav class="nav" id="nav">
+      <div class="lbl">Dashboard</div>
+      <button data-p="overview" class="on"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> Overview</button>
+      <button data-p="accuracy"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg> Forecast Accuracy</button>
+      <button data-p="demand"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M3 12c2-5 4-5 6 0s4 5 6 0 4-5 6 0"/></svg> Demand &amp; Forecast</button>
+      <button data-p="models"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg> Model Governance</button>
+      <button data-p="map"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s7-7.6 7-12a7 7 0 1 0-14 0c0 4.4 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg> Geospatial</button>
+    </nav>
+    <div class="side-foot"><b>SAS&reg; Visual Forecasting</b><br>Hierarchical · 13-week horizon<br><span id="foot-series"></span> series · 0 failures<br>Demo data · illustrative</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb">Demand Planning / <b id="crumb">Overview</b></div>
+      <div class="pill"><span class="dot"></span>Champion · Hierarchical Forecasting</div>
+    </div>
+    <div class="stage">
+
+      <section class="page on" id="overview">
+        <div class="phead"><div class="kicker">Executive Summary</div>
+          <h2>Medical Supply Forecast Intelligence</h2>
+          <p>Demand forecasts across the national medical supply network, generated by SAS Visual Forecasting and reconciled across the full hierarchy — governorate, facility, category and SKU.</p></div>
+        <div class="grid c-4" id="kpis"></div>
+        <div class="grid c-23" style="margin-top:13px">
+          <div class="card"><h3>Forecast accuracy by hierarchy level <span class="tag">MAPE ↓ = better</span></h3>
+            <div class="sub">Accuracy sharpens as demand aggregates — the levels that drive budgeting and tenders are the most reliable.</div>
+            <div id="gradient" style="margin-top:20px"></div>
+            <div class="cap">Source: SAS VF hierarchical run. Aggregate levels cancel idiosyncratic SKU noise.</div></div>
+          <div class="card"><h3>Model family mix</h3><div class="sub">Champion model selected per series.</div>
+            <div id="modelmix" style="margin-top:8px"></div></div>
+        </div>
+        <div class="grid c-2" style="margin-top:13px">
+          <div class="card"><h3>Network demand trend <span class="tag">weekly · 2021–2024</span></h3><div id="mini-trend" style="margin-top:16px"></div></div>
+          <div class="card"><h3>Forecast quality at a glance</h3><div id="quality" style="margin-top:10px"></div></div>
+        </div>
+      </section>
+
+      <section class="page" id="accuracy">
+        <div class="phead"><div class="kicker">Quality</div><h2>Forecast Accuracy</h2>
+          <p>Distribution of per-series error and how it varies across categories and governorates. WMAPE is volume-weighted; lower is better.</p></div>
+        <div class="grid c-4" id="acc-kpis"></div>
+        <div class="grid c-23" style="margin-top:13px">
+          <div class="card"><h3>MAPE distribution <span class="tag">1,433 series</span></h3>
+            <div class="sub">Tight cluster around 10–11% — at the data's noise floor.</div><div id="hist" style="margin-top:16px"></div></div>
+          <div class="card"><h3>Accuracy by governorate <span class="tag">WMAPE %</span></h3><div id="gov-bars" style="margin-top:12px"></div></div>
+        </div>
+        <div class="grid c-2" style="margin-top:13px">
+          <div class="card"><h3>Accuracy by product category <span class="tag">WMAPE %</span></h3><div id="cat-bars" style="margin-top:12px"></div></div>
+          <div class="card"><h3>Weakest series <span class="tag">highest MAPE</span></h3><div id="worst" style="margin-top:6px"></div>
+            <div class="cap">Most are elective/seasonal items dipping during Ramadan — expected, not error.</div></div>
+        </div>
+      </section>
+
+      <section class="page" id="demand">
+        <div class="phead"><div class="kicker">Signal</div><h2>Demand &amp; Forecast</h2>
+          <p>Weekly demand across the network with the reactive baseline it replaces. Shaded bands mark Ramadan, when elective demand softens.</p></div>
+        <div class="card"><h3>Weekly demand <span id="trend-ctl" class="seg-ctl tag"></span></h3>
+          <div id="trend" style="margin-top:13px"></div><div class="legend" id="trend-legend"></div></div>
+        <div class="grid c-3" style="margin-top:13px" id="demand-kpis"></div>
+      </section>
+
+      <section class="page" id="models">
+        <div class="phead"><div class="kicker">Governance</div><h2>Model Governance</h2>
+          <p>What the automated pipeline chose, and the demand character it adapted to — every series diagnosed, championed and audited.</p></div>
+        <div class="grid c-3">
+          <div class="card"><h3>Model family</h3><div id="mm2" style="margin-top:8px"></div></div>
+          <div class="card"><h3>Event-aware models</h3><div id="events" style="margin-top:14px"></div>
+            <div class="cap">Share of series using calendar/health-event regressors (ARIMAX).</div></div>
+          <div class="card"><h3>Run integrity</h3><div id="integrity" style="margin-top:6px"></div></div>
+        </div>
+        <div class="grid c-2" style="margin-top:13px">
+          <div class="card"><h3>Demand classification</h3><div class="sub">Automated segmentation of every series.</div><div id="dclass" style="margin-top:16px"></div></div>
+          <div class="card"><h3>Volume × volatility</h3><div class="sub">Where forecasting difficulty concentrates.</div><div id="vv" style="margin-top:16px"></div></div>
+        </div>
+      </section>
+
+      <section class="page" id="map">
+        <div class="phead"><div class="kicker">Geography</div><h2>Geospatial Distribution</h2>
+          <p>Annual demand value and forecast accuracy across Oman's 11 governorates. Bubble size = annual supply value; colour = WMAPE.</p></div>
+        <div class="grid c-23">
+          <div class="card"><h3>Governorate map <span class="tag">bubble = OMR/yr · colour = accuracy</span></h3>
+            <div id="mapsvg" style="margin-top:12px"></div><div class="legend" id="map-legend"></div></div>
+          <div class="card"><h3>Ranked by annual value</h3><div id="gov-rank" style="margin-top:6px"></div></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+<script>
+const DATA={"kpi":{"n_series":1433,"n_fac":71,"n_gov":11,"n_prod":31,"wmape":10.88,"accuracy":89.1,"arima":1013,"esm":420,"events":1013,"avg_mape":11.06,"median_mape":10.89,"events_pct":70.7,"annual_value_m":115.9},"hist":{"bins":[[8,3],[8.5,19],[9.0,78],[9.5,166],[10.0,226],[10.5,292],[11.0,252],[11.5,176],[12.0,104],[12.5,41],[13.0,22],[13.5,4],[14.0,3],[14.5,5],[15.0,3],[15.5,7],[16.0,7],[16.5,10],[17.0,3],[17.5,5],[18.0,3],[18.5,2],[19.0,2],[19.5,0]],"lo":8,"hi":20},"by_cat":[{"name":"Surgical Supplies","n":110,"wmape":10.11,"value":11.96,"arima":107,"esm":3},{"name":"Laboratory Supplies","n":208,"wmape":10.67,"value":28.46,"arima":206,"esm":2},{"name":"Emergency & Critical Care","n":159,"wmape":10.71,"value":10.12,"arima":110,"esm":49},{"name":"Medical Consumables","n":323,"wmape":10.79,"value":24.68,"arima":271,"esm":52},{"name":"Pharmaceuticals","n":362,"wmape":10.99,"value":10.89,"arima":156,"esm":206},{"name":"Vaccines","n":271,"wmape":11.95,"value":29.8,"arima":163,"esm":108}],"by_gov":[{"name":"Muscat","n":251,"wmape":11.03,"value":27.23,"weekly_demand":644022,"lat":23.588,"lon":58.408},{"name":"Al Batinah North","n":198,"wmape":10.92,"value":19.11,"weekly_demand":419579,"lat":24.34,"lon":56.71},{"name":"Dhofar","n":168,"wmape":10.9,"value":15.2,"weekly_demand":357217,"lat":18.5,"lon":53.5},{"name":"Al Batinah South","n":168,"wmape":10.69,"value":15.07,"weekly_demand":342691,"lat":23.39,"lon":57.42},{"name":"Ad Dakhiliyah","n":114,"wmape":11.01,"value":7.89,"weekly_demand":164145,"lat":22.93,"lon":57.53},{"name":"Ash Sharqiyah North","n":99,"wmape":10.81,"value":6.52,"weekly_demand":132907,"lat":22.69,"lon":58.53},{"name":"Ash Sharqiyah South","n":99,"wmape":10.83,"value":5.84,"weekly_demand":140105,"lat":22.57,"lon":59.53},{"name":"Adh Dhahirah","n":84,"wmape":10.73,"value":5.21,"weekly_demand":117264,"lat":23.22,"lon":56.52},{"name":"Al Buraimi","n":84,"wmape":10.67,"value":4.8,"weekly_demand":109616,"lat":24.25,"lon":55.79},{"name":"Musandam","n":84,"wmape":10.8,"value":4.54,"weekly_demand":100255,"lat":26.2,"lon":56.25},{"name":"Al Wusta","n":84,"wmape":10.76,"value":4.52,"weekly_demand":99729,"lat":19.96,"lon":56.28}],"dclass":{"YEAR_ROUND_SEASONAL":466,"YEAR_ROUND_NON_SEASONAL":967},"vv":{"LOW_VOLUME_HIGH_VOLATILITY":343,"LOW_VOLUME_LOW_VOLATILITY":811,"HIGH_VOLUME_HIGH_VOLATILITY":279},"worst":[{"pid":"VX-202","cat":"Vaccines","gov":"Al Wusta","fac":"FAC-0058","mape":19.1,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Al Batinah South","fac":"FAC-0030","mape":19.0,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Al Batinah North","fac":"FAC-0026","mape":18.7,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Al Batinah North","fac":"WH-003","mape":18.5,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Dhofar","fac":"WH-002","mape":18.2,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Muscat","fac":"WH-001","mape":18.2,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Al Wusta","fac":"WH-011","mape":18.1,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Adh Dhahirah","fac":"FAC-0050","mape":17.8,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Al Batinah South","fac":"FAC-0032","mape":17.7,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Ash Sharqiyah South","fac":"WH-007","mape":17.7,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Al Batinah South","fac":"FAC-0029","mape":17.6,"model":"ESM"},{"pid":"VX-202","cat":"Vaccines","gov":"Musandam","fac":"WH-010","mape":17.6,"model":"ESM"}],"gradient":[{"level":"Governorate","series":11,"mape":2.5},{"level":"Facility","series":71,"mape":3.7},{"level":"Category","series":369,"mape":6.5},{"level":"Product (SKU)","series":1433,"mape":10.4}],"ts":{"weeks":["2021-01-04","2021-01-11","2021-01-18","2021-01-25","2021-02-01","2021-02-08","2021-02-15","2021-02-22","2021-03-01","2021-03-08","2021-03-15","2021-03-22","2021-03-29","2021-04-05","2021-04-12","2021-04-19","2021-04-26","2021-05-03","2021-05-10","2021-05-17","2021-05-24","2021-05-31","2021-06-07","2021-06-14","2021-06-21","2021-06-28","2021-07-05","2021-07-12","2021-07-19","2021-07-26","2021-08-02","2021-08-09","2021-08-16","2021-08-23","2021-08-30","2021-09-06","2021-09-13","2021-09-20","2021-09-27","2021-10-04","2021-10-11","2021-10-18","2021-10-25","2021-11-01","2021-11-08","2021-11-15","2021-11-22","2021-11-29","2021-12-06","2021-12-13","2021-12-20","2021-12-27","2022-01-03","2022-01-10","2022-01-17","2022-01-24","2022-01-31","2022-02-07","2022-02-14","2022-02-21","2022-02-28","2022-03-07","2022-03-14","2022-03-21","2022-03-28","2022-04-04","2022-04-11","2022-04-18","2022-04-25","2022-05-02","2022-05-09","2022-05-16","2022-05-23","2022-05-30","2022-06-06","2022-06-13","2022-06-20","2022-06-27","2022-07-04","2022-07-11","2022-07-18","2022-07-25","2022-08-01","2022-08-08","2022-08-15","2022-08-22","2022-08-29","2022-09-05","2022-09-12","2022-09-19","2022-09-26","2022-10-03","2022-10-10","2022-10-17","2022-10-24","2022-10-31","2022-11-07","2022-11-14","2022-11-21","2022-11-28","2022-12-05","2022-12-12","2022-12-19","2022-12-26","2023-01-02","2023-01-09","2023-01-16","2023-01-23","2023-01-30","2023-02-06","2023-02-13","2023-02-20","2023-02-27","2023-03-06","2023-03-13","2023-03-20","2023-03-27","2023-04-03","2023-04-10","2023-04-17","2023-04-24","2023-05-01","2023-05-08","2023-05-15","2023-05-22","2023-05-29","2023-06-05","2023-06-12","2023-06-19","2023-06-26","2023-07-03","2023-07-10","2023-07-17","2023-07-24","2023-07-31","2023-08-07","2023-08-14","2023-08-21","2023-08-28","2023-09-04","2023-09-11","2023-09-18","2023-09-25","2023-10-02","2023-10-09","2023-10-16","2023-10-23","2023-10-30","2023-11-06","2023-11-13","2023-11-20","2023-11-27","2023-12-04","2023-12-11","2023-12-18","2023-12-25","2024-01-01","2024-01-08","2024-01-15","2024-01-22","2024-01-29","2024-02-05","2024-02-12","2024-02-19","2024-02-26","2024-03-04","2024-03-11","2024-03-18","2024-03-25","2024-04-01","2024-04-08","2024-04-15","2024-04-22","2024-04-29","2024-05-06","2024-05-13","2024-05-20","2024-05-27","2024-06-03","2024-06-10","2024-06-17","2024-06-24","2024-07-01","2024-07-08","2024-07-15","2024-07-22","2024-07-29","2024-08-05","2024-08-12","2024-08-19","2024-08-26","2024-09-02","2024-09-09","2024-09-16","2024-09-23","2024-09-30","2024-10-07","2024-10-14","2024-10-21","2024-10-28","2024-11-04","2024-11-11","2024-11-18","2024-11-25","2024-12-02","2024-12-09","2024-12-16","2024-12-23","2024-12-30"],"actual":[3938431,3935940,3932031,3942293,3947008,3952910,3932031,3917156,3905352,3927701,3875335,3870034,3857119,3869540,3824385,4052215,4070018,4062090,4033465,3766160,3740717,3743728,2329444,2308695,2306716,2305469,2306029,2292305,2266624,2279890,2274070,2270639,2312658,2294267,2306174,2297248,2313600,2306271,2322894,2321516,2318944,2327093,2322850,2338420,2336528,2345634,2353827,2374209,2359770,2367260,2372510,2362540,3369496,3361225,3372493,3352193,3355941,3351918,3353611,3342078,3380312,3341568,3329240,2344075,2337555,2463109,2485771,2466360,2471887,2328938,2316825,2317558,2290272,2312718,2320523,2320294,2317782,2301884,2321776,2298175,2302361,2280459,2492405,2477866,2500445,2517980,2505231,2513831,2516690,2503597,2543056,2531909,2313287,2325477,2338086,2353684,2346794,2351394,2347590,2359088,2368585,2370224,2346694,2369041,2357074,2362800,2359990,2375414,2339036,2371702,2366699,2353240,2358044,2375099,2361099,2340255,2465402,2464504,2486841,2478395,2325994,2312629,2323308,2314891,2326075,2309610,2327136,2321630,2322782,2271843,2280336,2272329,2302539,2277292,2296114,2299079,2306757,2300189,2304160,2299447,2309314,2317044,2310344,2309115,2309962,2331970,2315481,2340025,2363461,2335145,2361794,2353170,3116795,3152478,3174028,3142445,3160368,3140934,3156806,3133353,3109674,3147564,3141217,2364976,2355972,2348149,2488102,2482408,2462830,2480642,2481491,2325376,2339096,2303751,2354307,2333178,2308566,2319378,2323412,2322233,2294753,2284028,2665546,2711353,2726606,2699159,2690118,2710864,2699541,2698328,2729581,2719203,2305184,2306719,2293685,2329302,2315849,2323559,2333876,2373954,2353362,2344307,2378515,2345708,2345821,2350732,2371012,2356699,2369185],"reactive":[1810154,2208993,2642925,3046530,3051156,3056632,3062097,3056713,3049824,3053923,3023374,3036332,3021867,2992013,2983408,2989469,3041732,3096548,3146215,3138038,3059187,2980705,3547101,3092201,2617644,2153526,2156304,2153655,2150539,2140017,2126714,2125766,2127745,2136032,2134991,2149831,2301801,2306623,2299969,2311384,2314136,2322694,2324250,2325120,2325783,2339019,2334527,2190599,2200017,2196837,2191045,2192073,1831974,2090096,2349415,2605000,2601611,2591470,2599862,2602349,2597176,2600225,2593333,3342242,3006553,2063234,1843362,1874375,1906666,2478540,2422450,2367244,2321549,2145420,2148488,2153459,2160409,2162558,2161255,2164443,2156769,2158034,2081674,2125623,2172419,2235756,2244244,2241509,2373454,2370758,2369881,2384351,2526403,2467840,2385494,2327159,2336604,2349201,2347936,2182116,2189421,2195789,2203867,2192788,2198065,2201551,2193754,2189114,2197698,2183873,2198517,2192856,2200054,2196256,2363957,2366981,1826425,1850793,1877736,1914341,2481841,2436493,2379050,2315162,2322952,2240723,2161980,2163971,2163594,2171951,2158993,2151153,2127421,2133641,2139504,2145570,2148435,2146468,2156269,2156481,2298252,2304724,2312165,2314678,2320234,2307720,2314673,2319072,2331866,2338424,2346377,2249825,1814549,2031904,2230157,2434147,2443945,2452844,2455274,2439847,2440967,2424073,2427540,2934275,2692422,2444761,1820266,1851987,1903296,1925172,1915309,2478652,2425936,2383081,2320734,2327479,2323328,2242146,2158900,2158033,2165563,2170852,2006664,2085504,2208273,2323605,2316578,2309374,2305774,2304912,2313389,2308263,2709997,2580663,2441543,2303139,2305238,2312012,2324167,2319273,2335732,2353526,2357966,2252411,2195113,2192452,2182677,2194148,2191473],"ramadan":[1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],"epidemic":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"by_cat":{"Emergency & Critical Care":[279078,283202,278301,276429,278017,281783,292682,281529,286531,290848,297622,295525,303777,304455,304198,335509,341757,347864,359734,329634,333333,337350,235747,245311,243275,241214,252244,247726,247752,247661,248759,247353,250154,242158,241521,237860,234086,228149,218464,221644,217281,212415,205837,205025,201363,197714,194569,191093,189219,185164,186860,181250,244764,247012,247717,244549,244125,245939,246874,245779,252420,253348,257158,201491,200735,223358,228127,225814,232688,224400,227163,236451,230589,231159,245626,245364,241470,244675,250051,249007,254962,243248,264124,257662,262223,263332,255410,257031,247176,241857,242802,238939,221553,207536,215396,209638,205278,199808,196170,192615,190202,187174,180769,185157,178172,178622,180225,181216,179077,185002,183027,186961,189103,191377,194351,196654,221230,223844,228419,233319,217523,221968,231016,233693,234440,228368,247170,242585,243728,247588,247716,247960,246726,249650,250747,247518,250401,242977,235683,240979,234121,228130,225381,225084,215614,216277,206660,208637,204017,206020,194146,194462,238590,239857,239615,235573,227972,224624,227512,229705,231824,232451,234544,187275,191010,185684,208340,219832,216623,221982,225329,210367,214385,220822,226351,229557,234073,236567,236659,233866,251741,244248,272491,274901,273308,276653,278731,272520,281949,266055,267353,265631,230953,232298,228704,223223,222712,213984,212987,206561,201105,193847,197729,189532,191186,182089,185512,180398,182979],"Laboratory Supplies":[617918,615368,618419,631181,629176,628881,617883,631024,628089,630504,630949,623663,643228,628599,621276,657356,666078,689503,683924,625775,625394,636937,370150,361891,365274,369055,357603,359273,369569,369981,363868,360239,371964,360797,368644,364240,369731,365254,377168,361518,370166,372752,365681,361381,361131,369327,365243,366822,366677,375142,366201,370745,520277,540667,537234,522345,533824,534485,528954,544712,533267,531803,524114,365689,371385,394974,400851,395854,402191,369165,372679,367658,361330,366100,362004,365788,371064,368735,370433,372256,370132,361076,404647,401499,402644,393994,401973,402221,404509,401262,402095,409081,372883,363442,366438,371760,358353,369057,366607,363443,365308,370217,363505,368075,370363,368839,367439,367290,366515,369294,375571,368197,368680,381947,368114,364957,388265,399013,395458,405356,363772,373043,372510,369259,366167,367902,370061,367303,371532,361585,371216,365318,370105,361646,364265,369826,370504,368051,369946,363102,369483,360509,363878,362903,371164,372576,363460,369865,367908,354723,375723,370757,498200,494901,486655,498405,485262,503308,498778,492349,490640,501768,495880,369345,365376,363096,399768,396276,391865,398759,389111,364252,373270,363276,376875,363357,372055,366840,372078,367282,366904,372068,435024,445619,449836,439989,439694,442977,448682,455039,439360,434398,371612,366257,359608,368232,358279,366763,370512,372193,369815,368940,364564,364752,361824,365101,373025,363385,374451],"Medical Consumables":[1443788,1419913,1428809,1426437,1447586,1436143,1449548,1441648,1431855,1458189,1426383,1435435,1439676,1465908,1450318,1592105,1588163,1574904,1562398,1466220,1460873,1456906,837430,835407,834941,840844,848304,832223,825344,839733,827484,834856,845627,831559,843319,819717,834973,827548,828549,824887,809981,805537,812665,811313,813979,803271,802201,817224,791572,800740,788900,778326,1189701,1193786,1212688,1195645,1181488,1197527,1202015,1206228,1223883,1212135,1214202,801421,802601,866692,874953,875401,886468,825669,821220,820764,833057,833664,844000,835993,844496,839003,845131,845194,848333,838840,927241,916796,931197,936450,925136,922414,920176,914073,912887,907449,803509,827732,825261,813915,820791,803695,807456,800494,797182,795959,792433,788028,782572,786459,789758,790787,775378,791361,795674,793195,794093,797374,811108,801828,860976,872486,880291,882400,813182,817539,826676,837358,831770,824630,829771,838690,841494,834100,834596,827460,858196,837314,841159,848254,845789,837174,835082,825786,835442,839257,821927,819950,808834,810634,802897,814059,820524,800103,802668,796033,1098297,1117277,1125311,1098514,1127043,1117363,1105089,1094578,1103680,1106463,1111838,793341,790315,794013,862287,852346,855179,877256,889447,816414,830379,814994,823350,826062,820268,831098,833135,848721,836922,838096,1010897,1038645,1038981,1018454,1012305,1035778,1010902,1004099,1024125,1011113,831416,830570,820451,827024,819592,808269,812162,814009,815673,805273,805813,787389,788263,800554,794702,794089,788690],"Pharmaceuticals":[1232116,1247763,1235970,1236640,1222165,1240246,1205902,1196466,1198549,1191253,1159803,1157353,1113100,1119397,1101418,1137120,1144943,1125427,1108577,1006463,992780,986189,639764,623278,617597,610637,603227,609628,603645,604404,614201,608491,623624,638544,630103,648884,646636,658915,668394,681330,691081,702376,703865,725050,720865,734327,750671,756946,766600,758146,783297,782920,1091318,1054675,1052474,1068130,1070389,1053937,1052119,1027492,1047280,1026354,1013174,733346,723370,762204,765517,755411,741797,675518,667081,661704,639372,633267,624406,628826,615022,609094,613781,608608,609271,617909,661411,667316,668919,688386,683241,696001,706170,703556,741733,736034,684033,692408,696678,720119,724628,735350,735610,759212,769618,771254,763674,779689,779181,779934,775228,787242,769593,779727,770288,760767,761243,762221,743388,736064,777879,753552,766740,748970,697520,672812,663914,644181,644872,640121,635285,625220,617035,607336,607079,609106,607384,610240,618701,615864,616932,628638,636925,645440,644768,663351,668634,670007,680176,695755,706175,709309,732574,734695,746439,746664,977420,993211,1013702,1001563,1008211,989881,1013125,1007278,979196,999844,992190,773861,762687,760794,795299,793654,782924,767278,762875,699438,686924,672612,674584,662093,634093,635879,636029,627233,621046,609663,698326,700827,713375,713382,706307,709828,706525,719750,743108,751446,641962,650640,658165,676307,684604,699603,700598,744034,728216,734865,767097,757823,756679,757812,774519,770670,774534],"Surgical Supplies":[84221,86492,86631,85131,87012,87405,85613,87028,86105,86001,84459,87153,85514,86821,86037,53406,52776,52824,54798,88288,87067,85276,86412,85142,85877,86191,86129,85912,86205,85074,86557,85692,83875,85311,85816,88126,87726,85424,86366,87513,83966,87195,85755,85242,86381,85834,86494,85401,84913,88895,87551,86313,87330,86044,83699,85229,86324,85131,86787,86185,86050,86079,87947,85284,86278,52042,53773,53554,53365,87101,87003,87476,87851,86439,86195,85810,86466,83915,86733,87975,85603,88349,87653,86752,85594,86019,87821,84602,84426,86788,88371,83666,84154,85268,84391,86089,84629,87574,87344,84688,85805,84990,87034,87137,85743,86383,84353,86497,86136,84835,84120,87585,86648,84582,88193,85073,53835,52944,54300,53342,87058,85867,87012,88318,86679,87627,86221,86387,88045,86412,86297,87728,85022,86262,86213,85620,86299,87344,87659,85995,85041,84599,85939,84554,86991,85414,86907,85560,86429,84360,86826,86520,86800,85447,90449,86386,87648,86468,86584,87156,86526,84957,86308,84243,87433,85987,53763,54254,53536,53944,53349,87914,87236,86981,87637,86478,86259,87123,86282,85642,85123,86059,85343,87689,87097,86658,85691,85897,86159,85742,87234,86353,88515,85118,84936,88933,84290,86302,87583,85157,85599,86070,88689,87190,87645,86715,85279,85993,86686],"Vaccines":[281310,283202,283901,286475,283052,278452,280403,279461,274223,270906,276119,270905,271824,264360,261138,276719,276301,271568,264034,249780,241270,241070,159941,157666,159752,157528,158522,157543,134109,133037,133201,134008,137414,135898,136771,138421,140448,140981,143953,144624,146469,146818,149047,150409,152809,155161,154649,156723,160789,159173,159701,162986,236106,239041,238681,236295,239791,234899,236862,231682,237412,231849,232645,156844,153186,163839,162550,160326,155378,147085,141679,143505,138073,162089,158292,158513,159264,156462,155647,135135,134060,131037,147329,147841,149868,149799,151650,151562,154233,156061,155168,156740,147155,149091,149922,152163,153115,155910,154403,158636,160470,160630,159279,160955,161043,162563,162987,162382,162337,161483,158019,156535,158277,157598,155945,155679,163217,162665,161633,155008,146939,141400,142180,142082,162147,160962,158628,161445,160948,134822,133432,134757,135106,132180,135029,131997,136832,136005,138865,138145,140459,141198,144585,146617,147183,151314,149382,152595,152009,155244,155992,158734,217488,221785,218296,222004,224232,219290,225718,222287,217808,222081,220457,156911,159151,158575,168645,166046,162703,161423,161380,146991,146902,145066,165510,165631,161818,161871,159229,159489,133017,133894,163465,163672,164009,164023,167390,163864,165324,167643,168401,170262,140726,141836,141821,145583,146372,148638,150034,152000,152954,155312,154623,159022,160224,158461,157975,162164,161845]}},"cats":["Emergency & Critical Care","Laboratory Supplies","Medical Consumables","Pharmaceuticals","Surgical Supplies","Vaccines"]};
+const F={n:x=>x.toLocaleString('en-US'),pc:x=>x.toFixed(1)+'%'};
+const C={primary:'#1F8A70',accent2:'#147460',good:'#2F9E84',warn:'#C39A45',bad:'#C25A48',
+  ink:'#1C1C1A',muted:'#76766E',faint:'#A6A69E',line:'#ECEBE6',track:'#F1F0EB',gray:'#D8D7D0',soft:'#ECF4F1'};
+const CATCOL={'Surgical Supplies':'#1F8A70','Laboratory Supplies':'#5A7D9A','Emergency & Critical Care':'#BC6B57','Medical Consumables':'#8A82A8','Pharmaceuticals':'#6F9A5E','Vaccines':'#C39A45'};
+function mapeColor(m){const t=Math.max(0,Math.min(1,(m-9)/4));const a=[47,158,132],b=[195,154,69],c=[194,90,72];let r,g,bl;
+  if(t<.5){const k=t/.5;r=a[0]+(b[0]-a[0])*k;g=a[1]+(b[1]-a[1])*k;bl=a[2]+(b[2]-a[2])*k;}
+  else{const k=(t-.5)/.5;r=b[0]+(c[0]-b[0])*k;g=b[1]+(c[1]-b[1])*k;bl=b[2]+(c[2]-b[2])*k;}
+  const hx=v=>('0'+((v|0).toString(16))).slice(-2);return '#'+hx(r)+hx(g)+hx(bl);}
+const $=s=>document.querySelector(s),EL=(s,h)=>{const e=$(s);if(e)e.innerHTML=h;};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+function kpiCard(o,i){return `<div class="card kpi" style="animation-delay:${i*45}ms">
+  <div class="k-lbl">${o.lbl}</div>
+  <div class="k-val">${o.val}${o.unit?`<small>${o.unit}</small>`:''}</div>
+  <div class="k-meta">${o.chip?`<span class="chiparrow ${o.chipc}">${o.chip}</span>`:''}<span>${o.meta}</span></div></div>`;}
+const K=DATA.kpi;
+EL('#kpis',[
+  {lbl:'Forecast Accuracy',val:K.accuracy,unit:'%',chip:'+8.6 pts',chipc:'up',meta:'vs reactive baseline'},
+  {lbl:'WMAPE',val:K.wmape,unit:'%',chip:'noise floor',chipc:'neu',meta:'volume-weighted error'},
+  {lbl:'Series Forecast',val:F.n(K.n_series),meta:K.n_fac+' facilities · '+K.n_gov+' governorates'},
+  {lbl:'Network Supply Value',val:K.annual_value_m,unit:'M OMR / yr',meta:'across '+K.n_prod+' products'},
+].map(kpiCard).join(''));
+$('#foot-series').textContent=F.n(K.n_series);
+EL('#acc-kpis',[
+  {lbl:'Median MAPE',val:K.median_mape,unit:'%',meta:'typical series'},
+  {lbl:'Mean MAPE',val:K.avg_mape,unit:'%',meta:'unweighted'},
+  {lbl:'WMAPE',val:K.wmape,unit:'%',chip:'headline',chipc:'neu',meta:'volume-weighted'},
+  {lbl:'Model Failures',val:'0',chip:'clean',chipc:'up',meta:'across all series'},
+].map(kpiCard).join(''));
+EL('#demand-kpis',[
+  {lbl:'Weeks of History',val:DATA.ts.weeks.length,meta:'Jan 2021 – Dec 2024'},
+  {lbl:'Event-aware Models',val:K.events_pct,unit:'%',meta:F.n(K.events)+' ARIMAX series'},
+  {lbl:'Avg Weekly Demand',val:F.n(Math.round(DATA.ts.actual.reduce((a,b)=>a+b,0)/DATA.ts.actual.length)),meta:'units, all categories'},
+].map(kpiCard).join(''));
+
+function donut(sel,segs,center,sw){
+  sw=sw||13;const sz=190,cx=sz/2,cy=sz/2,r=70,c=2*Math.PI*r;let off=0,tot=segs.reduce((a,b)=>a+b.value,0);
+  let arcs=segs.map(s=>{const frac=s.value/tot,len=c*frac,el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}" stroke-dasharray="${len} ${c-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"><animate attributeName="stroke-dasharray" from="0 ${c}" to="${len} ${c-len}" dur=".9s" fill="freeze" calcMode="spline" keySplines="0.2 0.7 0.3 1" keyTimes="0;1"/></circle>`;off+=len;return el;}).join('');
+  const leg=segs.map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;margin:8px 0"><span style="color:var(--muted)"><i style="background:${s.color};display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px"></i>${s.label}</span><b style="font-variant-numeric:tabular-nums;color:var(--ink);font-weight:500">${s.disp}</b></div>`).join('');
+  EL(sel,`<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <svg width="138" height="138" viewBox="0 0 ${sz} ${sz}" style="flex:none">${arcs}
+    <text x="${cx}" y="${cy-2}" text-anchor="middle" fill="${C.ink}" font-family="Newsreader,serif" font-weight="300" font-size="30">${center.v}</text>
+    <text x="${cx}" y="${cy+17}" text-anchor="middle" fill="${C.muted}" font-family="Hanken Grotesk,sans-serif" font-size="9" letter-spacing="1.6">${center.l}</text></svg>
+    <div style="flex:1;min-width:150px">${leg}</div></div>`);
+}
+const mmSeg=[{label:'ARIMA / ARIMAX',value:K.arima,color:C.primary,disp:F.n(K.arima)+' · '+Math.round(100*K.arima/K.n_series)+'%'},
+             {label:'Exp. Smoothing',value:K.esm,color:C.gray,disp:F.n(K.esm)+' · '+Math.round(100*K.esm/K.n_series)+'%'}];
+donut('#modelmix',mmSeg,{v:F.n(K.n_series),l:'SERIES'});
+donut('#mm2',mmSeg,{v:Math.round(100*K.arima/K.n_series)+'%',l:'ARIMA'});
+
+function hbars(sel,items,opt={}){
+  const max=opt.max||Math.max(...items.map(i=>i.v))*1.08,fmt=opt.fmt||(x=>x);
+  const rows=items.map((it,i)=>{const w=Math.max(1.5,100*it.v/max),col=it.color||C.primary;
+    return `<div style="margin:9px 0">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+        <span style="color:var(--ink)">${esc(it.label)}${it.sub?` <span style="color:var(--faint);font-size:11px">${it.sub}</span>`:''}</span>
+        <b style="font-variant-numeric:tabular-nums;color:${col};font-weight:600">${fmt(it.v)}</b></div>
+      <div style="height:7px;background:var(--track);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:0;border-radius:4px;background:${col};transition:width .9s cubic-bezier(.2,.7,.3,1);transition-delay:${i*55}ms" data-w="${w}"></div></div></div>`;}).join('');
+  EL(sel,rows);requestAnimationFrame(()=>document.querySelectorAll(sel+' [data-w]').forEach(b=>b.style.width=b.dataset.w+'%'));
+}
+hbars('#cat-bars',DATA.by_cat.map(c=>({label:c.name,v:c.wmape,sub:c.n+' series',color:mapeColor(c.wmape)})),{fmt:F.pc,max:14});
+hbars('#gov-bars',[...DATA.by_gov].sort((a,b)=>a.wmape-b.wmape).map(g=>({label:g.name,v:g.wmape,color:mapeColor(g.wmape)})),{fmt:F.pc,max:14});
+hbars('#gov-rank',DATA.by_gov.map((g,i)=>({label:`${i+1}.  ${g.name}`,v:g.value,sub:g.n+' series',color:C.primary})),{fmt:x=>x.toFixed(1)+'M',max:Math.max(...DATA.by_gov.map(g=>g.value))*1.1});
+
+function gradient(sel){const g=DATA.gradient,maxM=12;
+  const rows=g.map((d,i)=>{const w=100*d.mape/maxM,acc=(100-d.mape).toFixed(1),col=mapeColor(d.mape);
+    return `<div style="margin:10px 0">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+        <span style="color:var(--ink)">${d.level} <span style="color:var(--faint);font-size:11px">${F.n(d.series)} series</span></span>
+        <span style="font-variant-numeric:tabular-nums;font-size:12.5px"><b style="color:${col};font-weight:600">${d.mape}%</b> <span style="color:var(--muted)">MAPE · ${acc}% acc</span></span></div>
+      <div style="height:9px;background:var(--track);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:0;border-radius:5px;background:${col};transition:width 1s cubic-bezier(.2,.7,.3,1);transition-delay:${i*110}ms" data-w="${w}"></div></div></div>`;}).join('');
+  EL(sel,rows);requestAnimationFrame(()=>document.querySelectorAll(sel+' [data-w]').forEach(b=>b.style.width=b.dataset.w+'%'));
+}
+gradient('#gradient');
+
+function histogram(sel){const bins=DATA.hist.bins,W=620,H=196,pl=34,pb=24,pt=8,pr=8;
+  const iw=W-pl-pr,ih=H-pt-pb,maxC=Math.max(...bins.map(b=>b[1])),bw=iw/bins.length;
+  let bars='',xt='';const xs=DATA.hist.lo,xe=DATA.hist.hi;
+  bins.forEach((b,i)=>{const h=ih*b[1]/maxC,x=pl+i*bw,y=pt+ih-h,inb=b[0]>=10&&b[0]<11.5;
+    bars+=`<rect x="${x+1}" y="${pt+ih}" width="${bw-2}" height="0" rx="1.5" fill="${inb?C.primary:'#CFE4DD'}"><animate attributeName="height" to="${h}" dur=".7s" begin="${i*12}ms" fill="freeze" calcMode="spline" keySplines="0.2 0.7 0.3 1" keyTimes="0;1"/><animate attributeName="y" to="${y}" dur=".7s" begin="${i*12}ms" fill="freeze" calcMode="spline" keySplines="0.2 0.7 0.3 1" keyTimes="0;1"/></rect>`;});
+  for(let v=Math.ceil(xs);v<=xe;v+=2){const x=pl+iw*(v-xs)/(xe-xs);xt+=`<text x="${x}" y="${H-8}" text-anchor="middle" fill="${C.faint}" font-family="Hanken Grotesk" font-size="10">${v}%</text>`;}
+  let yg='';for(let k=0;k<=4;k++){const y=pt+ih*k/4,val=Math.round(maxC*(1-k/4));yg+=`<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="${C.line}"/><text x="${pl-7}" y="${y+3}" text-anchor="end" fill="${C.faint}" font-family="Hanken Grotesk" font-size="9">${val}</text>`;}
+  EL(sel,`<svg viewBox="0 0 ${W} ${H}">${yg}${bars}${xt}</svg>`);
+}
+histogram('#hist');
+
+const RAMADAN=[['2021-04-13','2021-05-12'],['2022-04-02','2022-05-01'],['2023-03-23','2023-04-20'],['2024-03-11','2024-04-09']];
+function lineChart(sel,mode){const wks=DATA.ts.weeks,W=940,H=264,pl=50,pr=14,pt=14,pb=30,iw=W-pl-pr,ih=H-pt-pb;
+  let series=[];
+  if(mode==='all'){series=[{name:'Actual demand',data:DATA.ts.actual,color:C.primary,fill:1},{name:'Reactive baseline',data:DATA.ts.reactive,color:C.faint,dash:1}];}
+  else{series=[{name:mode,data:DATA.ts.by_cat[mode],color:CATCOL[mode]||C.primary,fill:1}];}
+  const all=series.flatMap(s=>s.data),mx=Math.max(...all),mn=Math.min(...all)*.92;
+  const X=i=>pl+iw*i/(wks.length-1),Y=v=>pt+ih*(1-(v-mn)/(mx-mn));
+  let bands='';RAMADAN.forEach(([a,b])=>{let i0=wks.findIndex(w=>w>=a),i1=wks.findIndex(w=>w>=b);if(i0<0)return;if(i1<0)i1=wks.length-1;bands+=`<rect x="${X(i0)}" y="${pt}" width="${X(i1)-X(i0)}" height="${ih}" fill="#F3F1EB"/>`;});
+  let grid='';['2022-01-01','2023-01-01','2024-01-01'].forEach(y=>{let i=wks.findIndex(w=>w>=y);if(i<0)return;grid+=`<line x1="${X(i)}" y1="${pt}" x2="${X(i)}" y2="${pt+ih}" stroke="${C.line}"/>`;});
+  ['2021','2022','2023','2024'].forEach(yr=>{let i=wks.findIndex(w=>w>=yr+'-06-15');if(i<0)return;grid+=`<text x="${X(i)}" y="${H-9}" text-anchor="middle" fill="${C.faint}" font-family="Hanken Grotesk" font-size="10">${yr}</text>`;});
+  let yg='';for(let k=0;k<=4;k++){const v=mn+(mx-mn)*k/4,y=Y(v);yg+=`<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="${C.line}"/><text x="${pl-7}" y="${y+3}" text-anchor="end" fill="${C.faint}" font-family="Hanken Grotesk" font-size="9">${(v/1000).toFixed(0)}k</text>`;}
+  let paths='';series.forEach(s=>{const d=s.data.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+    if(s.fill){const area=d+` L${X(wks.length-1)} ${pt+ih} L${pl} ${pt+ih} Z`;
+      paths+=`<defs><linearGradient id="g_${s.name.replace(/\W/g,'')}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${s.color}" stop-opacity=".13"/><stop offset="1" stop-color="${s.color}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#g_${s.name.replace(/\W/g,'')})"/>`;}
+    const L=2000;paths+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.dash?1.4:1.8}" ${s.dash?'stroke-dasharray="4 4"':`stroke-dasharray="${L}" stroke-dashoffset="${L}"`} stroke-linejoin="round">${s.dash?'':`<animate attributeName="stroke-dashoffset" to="0" dur="1.2s" fill="freeze" calcMode="spline" keySplines="0.3 0.6 0.3 1" keyTimes="0;1"/>`}</path>`;});
+  EL(sel,`<svg viewBox="0 0 ${W} ${H}">${bands}${yg}${grid}${paths}</svg>`);
+  EL('#trend-legend',series.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('')+`<span><i style="background:#E4DFD2"></i>Ramadan</span>`);
+}
+const modes=[['all','Actual vs Baseline'],...DATA.cats.map(c=>[c,c])];
+EL('#trend-ctl',modes.map((m,i)=>`<button data-m="${esc(m[0])}" class="${i===0?'on':''}">${esc(m[1])}</button>`).join(''));
+$('#trend-ctl').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('#trend-ctl').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');lineChart('#trend',b.dataset.m);});
+function miniTrend(sel){const wks=DATA.ts.weeks,d=DATA.ts.actual,W=520,H=124,pl=6,pr=6,pt=8,pb=8,iw=W-pl-pr,ih=H-pt-pb;
+  const mx=Math.max(...d),mn=Math.min(...d)*.95,X=i=>pl+iw*i/(d.length-1),Y=v=>pt+ih*(1-(v-mn)/(mx-mn));
+  const p=d.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+  let bands='';RAMADAN.forEach(([a,b])=>{let i0=wks.findIndex(w=>w>=a),i1=wks.findIndex(w=>w>=b);if(i0<0)return;if(i1<0)i1=d.length-1;bands+=`<rect x="${X(i0)}" y="${pt}" width="${X(i1)-X(i0)}" height="${ih}" fill="#F3F1EB"/>`;});
+  EL(sel,`<svg viewBox="0 0 ${W} ${H}">${bands}<defs><linearGradient id="mg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${C.primary}" stop-opacity=".12"/><stop offset="1" stop-color="${C.primary}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${p} L${X(d.length-1)} ${pt+ih} L${pl} ${pt+ih} Z" fill="url(#mg)"/><path d="${p}" fill="none" stroke="${C.primary}" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin-top:8px"><span>2021</span><span>Shaded = Ramadan</span><span>2024</span></div>`);}
+miniTrend('#mini-trend');
+
+EL('#quality',`<div style="margin-top:4px">${[['Forecasts within 70–130% band','98.6%',C.good],['Series with zero failures','100%',C.good],['Event-aware (ARIMAX) models',K.events_pct+'%',C.primary],['Median series MAPE',K.median_mape+'%',C.ink]]
+  .map(([l,v,c])=>`<div class="statline"><span>${l}</span><b style="color:${c}">${v}</b></div>`).join('')}</div>`);
+
+EL('#worst',`<table class="tbl"><thead><tr><th>Product</th><th>Category</th><th>Governorate</th><th style="text-align:right">MAPE</th><th>Model</th></tr></thead><tbody>
+  ${DATA.worst.slice(0,8).map(w=>`<tr><td class="mono">${w.pid}</td><td>${esc(w.cat)}</td><td style="color:var(--muted)">${esc(w.gov)}</td>
+    <td style="text-align:right" class="mono"><b style="color:${mapeColor(w.mape)}">${w.mape}%</b></td><td><span class="bdg ${w.model.toLowerCase()}">${w.model}</span></td></tr>`).join('')}</tbody></table>`);
+
+(function(){const r=66,c=2*Math.PI*r,off=c*(1-K.events_pct/100);
+EL('#events',`<svg viewBox="0 0 200 168" style="max-width:172px;margin:0 auto;display:block">
+  <circle cx="100" cy="86" r="${r}" fill="none" stroke="${C.track}" stroke-width="11"/>
+  <circle cx="100" cy="86" r="${r}" fill="none" stroke="${C.primary}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c}" transform="rotate(-90 100 86)"><animate attributeName="stroke-dashoffset" to="${off}" dur="1.1s" fill="freeze" calcMode="spline" keySplines="0.2 0.7 0.3 1" keyTimes="0;1" values="${c};${off}"/></circle>
+  <text x="100" y="84" text-anchor="middle" fill="${C.ink}" font-family="Newsreader,serif" font-weight="300" font-size="38">${K.events_pct}%</text>
+  <text x="100" y="106" text-anchor="middle" fill="${C.muted}" font-family="Hanken Grotesk,sans-serif" font-size="9" letter-spacing="2">EVENT-AWARE</text></svg>`);})();
+
+EL('#integrity',`<div style="margin-top:2px">${[['Series forecast',F.n(K.n_series),C.ink],['Model failures','0',C.good],['Zero/flat forecasts','0',C.good],['Forecasts > 300%','0',C.good],['Reconciliation','Coherent',C.primary]]
+  .map(([l,v,c])=>`<div class="statline"><span>${l}</span><b style="color:${c}">${v}</b></div>`).join('')}</div>`);
+
+function classBars(sel,obj,palette){const ent=Object.entries(obj).sort((a,b)=>b[1]-a[1]),tot=ent.reduce((a,b)=>a+b[1],0);
+  hbars(sel,ent.map((e,i)=>({label:e[0].replace(/_/g,' ').toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()),v:e[1],sub:Math.round(100*e[1]/tot)+'%',color:palette[i%palette.length]})),{fmt:F.n,max:Math.max(...ent.map(e=>e[1]))*1.1});}
+classBars('#dclass',DATA.dclass,[C.primary,'#9CC2B7']);
+classBars('#vv',DATA.vv,[C.good,C.warn,C.bad]);
+
+function omanMap(sel){const g=DATA.by_gov,W=620,H=452,pad=50;
+  const lats=g.map(x=>x.lat),lons=g.map(x=>x.lon);
+  const laMin=Math.min(...lats)-.6,laMax=Math.max(...lats)+.6,loMin=Math.min(...lons)-.6,loMax=Math.max(...lons)+.6;
+  const PX=lon=>pad+(W-2*pad)*(lon-loMin)/(loMax-loMin),PY=lat=>pad+(H-2*pad)*(laMax-lat)/(laMax-laMin);
+  const vmax=Math.max(...g.map(x=>x.value)),R=v=>10+24*Math.sqrt(v/vmax);
+  const N=g.map((x,i)=>({x:PX(x.lon),y:PY(x.lat),r:R(x.value),col:mapeColor(x.wmape),rank:i+1,d:x}));
+  const x0=pad+4,x1=W-pad-4,y0=pad+4,y1=H-pad-4;
+  for(let it=0;it<160;it++){for(let i=0;i<N.length;i++)for(let j=i+1;j<N.length;j++){const a=N[i],b=N[j];let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||.01,min=a.r+b.r+10;if(d<min){const p=(min-d)/2,ux=dx/d,uy=dy/d;a.x-=ux*p;a.y-=uy*p;b.x+=ux*p;b.y+=uy*p;}}
+    for(const n of N){n.x=Math.max(x0+n.r,Math.min(x1-n.r,n.x));n.y=Math.max(y0+n.r,Math.min(y1-n.r,n.y));}}
+  let grat='';for(let k=0;k<=4;k++){const x=pad+(W-2*pad)*k/4,y=pad+(H-2*pad)*k/4;grat+=`<line x1="${x}" y1="${pad}" x2="${x}" y2="${H-pad}" stroke="#F1F0EB"/><line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="#F1F0EB"/>`;}
+  let bub=N.map((n,i)=>`<g><title>${esc(n.d.name)} — ${n.d.value.toFixed(1)}M OMR/yr · WMAPE ${n.d.wmape}% · ${n.d.n} series</title>
+      <circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="0" fill="${n.col}" fill-opacity=".16" stroke="${n.col}" stroke-width="1.4"><animate attributeName="r" to="${n.r.toFixed(1)}" dur=".85s" begin="${i*50}ms" fill="freeze" calcMode="spline" keySplines="0.2 0.7 0.3 1" keyTimes="0;1"/></circle>
+      <text x="${n.x.toFixed(1)}" y="${(n.y+4).toFixed(1)}" text-anchor="middle" fill="${C.ink}" font-family="Hanken Grotesk" font-size="12" font-weight="600">${n.rank}</text></g>`).join('');
+  EL(sel,`<svg viewBox="0 0 ${W} ${H}">${grat}<rect x="${pad}" y="${pad}" width="${W-2*pad}" height="${H-2*pad}" fill="none" stroke="${C.line}" rx="8"/>
+    <text x="${pad+2}" y="${pad-12}" fill="${C.faint}" font-family="Hanken Grotesk" font-size="9.5" letter-spacing="1.2">SULTANATE OF OMAN · NORTH ▲ · numbers key to ranked list →</text>${bub}</svg>`);
+  EL('#map-legend',`<span><i style="background:${C.good}"></i>Lower WMAPE</span><span><i style="background:${C.warn}"></i>Higher WMAPE</span><span style="color:var(--faint)">Bubble area ∝ annual value · hover for detail</span>`);
+}
+omanMap('#mapsvg');
+
+const titles={overview:'Overview',accuracy:'Forecast Accuracy',demand:'Demand & Forecast',models:'Model Governance',map:'Geospatial'};
+let drawn={overview:1};
+function fitPage(){const stage=document.querySelector('.stage'),pg=document.querySelector('.page.on');if(!pg||!stage)return;
+  pg.style.transform='scale(1)';
+  const availH=stage.clientHeight-22,availW=stage.clientWidth-80,natH=pg.offsetHeight,natW=pg.offsetWidth;
+  let s=Math.min(availH/natH,availW/natW,1);if(!isFinite(s)||s<=0)s=1;s=Math.max(s,0.45);
+  pg.style.transform='scale('+s+')';}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const p=b.dataset.p;
+  $('#nav').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));$('#'+p).classList.add('on');$('#crumb').textContent=titles[p];
+  if(p==='demand'&&!drawn.demand){lineChart('#trend','all');drawn.demand=1;}
+  requestAnimationFrame(fitPage);setTimeout(fitPage,70);});
+window.addEventListener('resize',fitPage);
+window.addEventListener('load',()=>setTimeout(fitPage,80));
+requestAnimationFrame(()=>requestAnimationFrame(fitPage));
+setTimeout(fitPage,360);
+</script>
+</body>
+</html>
